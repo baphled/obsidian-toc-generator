@@ -1,0 +1,10 @@
+{
+  "id": "obsidian-toc-generator",
+  "name": "TOC Generator",
+  "version": "0.1.0",
+  "minAppVersion": "1.0.0",
+  "description": "Frontmatter-aware TOC and Back-to-Top footers for Obsidian notes. Auto-updates on save.",
+  "author": "Yomi Colledge",
+  "authorUrl": "https://boodah.net",
+  "isDesktopOnly": false
+}
