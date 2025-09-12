@@ -1,6 +1,36 @@
-// lib/backToTop.js
-const { parseHeadings, sectionEndIndex } = require('./utils');
+import Utils from '@/Utils';
 
+/**
+ *
+ * Idempotently ensure exactly one "^top" at the specified line index.
+ * If not present, insert it at that index.
+ * If present elsewhere, remove those instances.
+ * Ensure exactly one blank line after it.
+ *
+ * @param {string[]} lines - Array of lines from a markdown file.
+ * @param {number} canonicalTopAt - The line index where "^top" should be ensured.
+ *
+ * @example
+ * const lines = [
+ *   'Some text',
+ *   '^top',
+ *   '',
+ *   'More text',
+ *   '^top'
+ * ];
+ * ensureSingleTop(lines, 0);
+ * console.log(lines);
+ * // Output:
+ * // [
+ * //   '^top',
+ * //   '',
+ * //   'Some text',
+ * //   '',
+ * //   'More text'
+ * // ]
+ *
+ * @returns {void}
+ */
 function ensureSingleTop(lines, canonicalTopAt) {
   const idxs = [];
   for (let i = 0; i < lines.length; i++) if (lines[i] === "^top") idxs.push(i);
@@ -16,9 +46,49 @@ function ensureSingleTop(lines, canonicalTopAt) {
  * Strictly idempotent footers:
  * - For every section at a configured level, remove *all* existing footer instances anywhere in the section.
  * - Insert exactly one canonical footer at the end-of-section (after nested H3/H4/… but before next section).
+ *
+ * @param {string[]} lines - Array of lines from a markdown file.
+ * @param {number[]} footerLevels - Array of heading levels (e.g., [2,3]) where footers should be added.
+ * @param {string} [hr="---"] - The horizontal rule string to use in the footer.
+ *
+ * @example
+ * const lines = [
+ *   '# Title',
+ *   'Some text',
+ *   '## Section 1',
+ *   'Content here',
+ *   '[[#^top|↩️ Back to Top]]',
+ *   '---',
+ *   'More content',
+ *   '## Section 2',
+ *   'Other content'
+ * ];
+ * upsertSectionFooters(lines, [2], '---');
+ * console.log(lines);
+ * // Output:
+ * // [
+ * //   '# Title',
+ * //   'Some text',
+ * //   '## Section 1',
+ * //   'Content here',
+ * //   '',
+ * //   '[[#^top|↩️ Back to Top]]',
+ * //   '',
+ * //   '---',
+ * //   'More content',
+ * //   '## Section 2',
+ * //   'Other content',
+ * //   '',
+ * //   '[[#^top|↩️ Back to Top]]',
+ * //   '',
+ * //   '---'
+ * // ]
+ *
+ * @returns {void}
+ *
  */
 function upsertSectionFooters(lines, footerLevels, hr) {
-  const heads = parseHeadings(lines);
+  const heads = Utils.parseHeadings(lines);
   if (!heads.length || !footerLevels || !footerLevels.length) return;
 
   const hrLine = hr || "---";
@@ -30,7 +100,7 @@ function upsertSectionFooters(lines, footerLevels, hr) {
     const h = heads[i];
     if (!footerLevels.includes(h.level)) continue;
 
-    let secEnd = sectionEndIndex(heads, i, lines.length);
+    let secEnd = Utils.sectionEndIndex(heads, i, lines.length);
 
     // 1) Remove *all* existing footers within the section
     let j = secEnd;
@@ -59,4 +129,10 @@ function upsertSectionFooters(lines, footerLevels, hr) {
   }
 }
 
-module.exports = { ensureSingleTop, upsertSectionFooters };
+/**
+ * @module BackToTop
+ *
+ * Exports for BackToTop module.
+ *
+ **/
+export default { ensureSingleTop, upsertSectionFooters };
