@@ -1,9 +1,7 @@
-// __tests__/frontmatter_unit.spec.js
-import Frontmatter from '@/Frontmatter';
-import Utils from '@/Utils';
+import Frontmatter from '@/Frontmatter.js';
+import Utils from '@/Utils.js';
 
 function set(lines) { return lines.slice(); }
-function one(ok, msg) { expect(ok).toBe(true); if (!ok) console.error(msg); }
 
 describe("Frontmatter", () => {
   describe("ensureFrontmatter", () => {

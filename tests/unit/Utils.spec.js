@@ -202,4 +202,32 @@ describe('Utils', () => {
       expect(out).toBe(14);
     });
   });
+
+  describe('isExcludedPath', () => {
+    it('returns false when no exclusions', () => {
+      expect(Utils.isExcludedPath('Notes/file.md', [])).toBe(false);
+    });
+
+    it('excludes exact folder', () => {
+      expect(Utils.isExcludedPath('Templates', ['Templates'])).toBe(true);
+    });
+
+    it('excludes files within folder', () => {
+      expect(Utils.isExcludedPath('Templates/readme.md', ['Templates'])).toBe(true);
+      expect(Utils.isExcludedPath('Archive/Notes/doc.md', ['Archive/Notes'])).toBe(true);
+    });
+
+    it('does not exclude similarly named folders', () => {
+      expect(Utils.isExcludedPath('Templates-Archive/doc.md', ['Templates'])).toBe(false);
+    });
+
+    it('handles mixed slashes and trailing slashes', () => {
+      expect(Utils.isExcludedPath('Archive/Notes/doc.md', ['Archive/Notes/'])).toBe(true);
+      expect(Utils.isExcludedPath('Archive/Notes', ['Archive/Notes/'])).toBe(true);
+    });
+
+    it('normalizes paths', () => {
+      expect(Utils.isExcludedPath('Archive//Notes///doc.md', ['Archive/Notes'])).toBe(true);
+    });
+  });
 });

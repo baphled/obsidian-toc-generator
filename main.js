@@ -3,12 +3,15 @@
 
 const { Plugin, PluginSettingTab, Setting, Notice, TFile } = require('obsidian');
 
+import Utils from '@/Utils.js';
+
 const DEFAULT_SETTINGS = {
   max_depth: 4,
   footer_levels: "2",
   prettify_h1: true,
   debounce_ms: 250,
-  hr: "---"
+  hr: "---",
+  excludedFolders: []
 };
 
 // Use Obsidian/Electron's Node require safely
@@ -26,7 +29,7 @@ function pickTransform(mod) {
 /** Try to load transform from live plugin dir; fall back to bundled */
 function loadTransformFromPluginDir(app, manifestId) {
   const path = nodeRequire('path');
-  const fs   = nodeRequire('fs');
+  const fs = nodeRequire('fs');
 
   try {
     const pluginDir = path.join(app?.vault?.adapter?.basePath || '', '.obsidian', 'plugins', manifestId);
@@ -109,6 +112,19 @@ class TOCGeneratorSettingTab extends PluginSettingTab {
           await this.plugin.saveSettings();
         })
       );
+
+    new Setting(containerEl)
+      .setName('Excluded folders')
+      .setDesc('One vault-relative folder per line. Files in these folders will be ignored.')
+      .addTextArea((ta) => {
+        ta.setValue((this.plugin.settings.excludedFolders || []).join('\n'))
+          .onChange(async (v) => {
+            this.plugin.settings.excludedFolders = v.split('\n').map(s => s.trim()).filter(Boolean);
+            await this.plugin.saveSettings();
+          });
+        ta.inputEl.rows = 4;
+        ta.inputEl.addClass('toc-excluded-folders');
+      });
   }
 }
 
@@ -144,6 +160,7 @@ module.exports = class TOCGenerator extends Plugin {
     // Re-run on file modifies
     this.registerEvent(this.app.vault.on('modify', (file) => {
       if (!(file instanceof TFile) || file.extension !== 'md') return;
+      if (Array.isArray(this.settings.excludedFolders) && Utils.isExcludedPath(file.path, this.settings.excludedFolders)) return;
       debounced(file);
     }));
 
@@ -155,6 +172,11 @@ module.exports = class TOCGenerator extends Plugin {
         const file = this.app.workspace.getActiveFile();
         if (!(file instanceof TFile) || file.extension !== 'md') {
           new Notice('MDNav: No active Markdown file');
+          return;
+        }
+        if (Array.isArray(this.settings.excludedFolders)
+          && Utils.isExcludedPath(file.path, this.settings.excludedFolders)) {
+          new Notice('MDNav: Folder excluded');
           return;
         }
         await this.processFile(file);
@@ -187,9 +209,9 @@ module.exports = class TOCGenerator extends Plugin {
       footer_levels: Array.isArray(this.settings.footer_levels)
         ? this.settings.footer_levels
         : String(this.settings.footer_levels ?? '2')
-            .split(',')
-            .map(s => Number(s.trim()))
-            .filter(n => Number.isFinite(n)),
+          .split(',')
+          .map(s => Number(s.trim()))
+          .filter(n => Number.isFinite(n)),
       prettify_h1: !!this.settings.prettify_h1,
       hr: this.settings.hr || '---'
     };
