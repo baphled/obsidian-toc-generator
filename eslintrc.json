@@ -1,0 +1,38 @@
+{
+  "root": true,
+  "env": {
+    "node": true
+  },
+  "plugins": [
+    "jest",
+    "jsdoc"
+  ],
+  "rules": {
+    "jsdoc/check-alignment": "error",
+    "jsdoc/check-param-names": "error",
+    "jsdoc/check-tag-names": "error",
+    "jsdoc/check-types": "error",
+    "jsdoc/require-jsdoc": "warn",
+    "jsdoc/require-param": "warn",
+    "jsdoc/require-returns": "warn"
+  }
+  "extends": [
+    "eslint:recommended"
+  ],
+  "parserOptions": {
+    "parser": "@babel/eslint-parser"
+  },
+  "rules": {
+    "no-debugger": "error"
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/*.spec.js"
+      ],
+      "env": {
+        "jest": true
+      }
+    }
+  ]
+}
