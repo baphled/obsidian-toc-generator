@@ -1,9 +1,18 @@
+// jest.config.js
 module.exports = {
-  rootDir: __dirname,                         // <- lock root
-  coverageDirectory: '<rootDir>/coverage',    // <- always write here
-  coverageProvider: 'v8',                     // <- avoids Babel instrumentation pitfalls
-  coverageReporters: ['json-summary', 'lcov', 'text', 'text-summary'],
+  rootDir: __dirname,
+  testEnvironment: 'node',
+  verbose: true,
+
+  // Transform only our code; don't rewrite node_modules
+  transform: { '^.+\\.jsx?$': ['babel-jest', { sourceMaps: 'inline' }] },
+  transformIgnorePatterns: ['/node_modules/'],
+
+  // ---- Coverage (V8) ----
   collectCoverage: true,
+  coverageProvider: 'v8',
+  coverageDirectory: '<rootDir>/coverage',
+  coverageReporters: ['json-summary', 'lcov', 'text', 'text-summary'],
   collectCoverageFrom: [
     '<rootDir>/**/*.js',
     '!**/node_modules/**',
@@ -24,5 +33,4 @@ module.exports = {
   transform: { '^.+\\.jsx?$': 'babel-jest' },
   testEnvironment: 'jsdom',
   clearMocks: true,
-  verbose: true,
 };

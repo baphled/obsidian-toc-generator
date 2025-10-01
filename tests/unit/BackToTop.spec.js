@@ -1,4 +1,3 @@
-// tests/unit/back_to_top.spec.js
 import BackToTop from '@/BackToTop';
 
 const asText = (lines) => (Array.isArray(lines) ? lines.join('\n') : String(lines));

@@ -15,7 +15,7 @@
     "jsdoc/require-jsdoc": "warn",
     "jsdoc/require-param": "warn",
     "jsdoc/require-returns": "warn"
-  }
+  },
   "extends": [
     "eslint:recommended"
   ],
