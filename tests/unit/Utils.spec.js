@@ -230,4 +230,30 @@ describe('Utils', () => {
       expect(Utils.isExcludedPath('Archive//Notes///doc.md', ['Archive/Notes'])).toBe(true);
     });
   });
+
+  describe('isIgnoredTags', () => {
+    it('returns false when no exclusions', () => {
+      expect(Utils.isIgnoredTags(['tag1', 'tag2'], [])).toBe(false);
+    });
+
+    it('returns false when no tags on note', () => {
+      expect(Utils.isIgnoredTags([], ['tag1'])).toBe(false);
+    });
+
+    it("excludes file tags with leading '#'", () => {
+      expect(Utils.isIgnoredTags(['#tag1', '#tag2'], ['tag1'])).toBe(true);
+    });
+
+    it("excludes file tags without leading '#'", () => {
+      expect(Utils.isIgnoredTags(['tag1', 'tag2'], ['tag2'])).toBe(true);
+    });
+
+    it("excludes file tags regardless of leading '#'", () => {
+      expect(Utils.isIgnoredTags(['#tag1', 'tag2'], ['#tag1'])).toBe(true);
+    });
+
+    it('is case-sensitive', () => {
+      expect(Utils.isIgnoredTags(['#Tag1'], ['tag1'])).toBe(false);
+    });
+  });
 });

@@ -1,4 +1,3 @@
-// tests/integration/main.spec.js
 jest.mock('obsidian', () => {
   class Plugin { constructor(app, manifest) { this.app = app; this.manifest = manifest; } addSettingTab(t) { this.__settingTab = t; } registerEvent(e) { return e; } registerInterval(i) { return i; } addCommand(c) { (this.__commands || (this.__commands = [])).push(c); return c; } async loadData() { return {}; } async saveData() { } }
   class PluginSettingTab { constructor(app, plugin) { this.app = app; this.plugin = plugin; const el = { innerHTML: "", empty() { this.innerHTML = ""; }, createEl() { return {}; } }; this.containerEl = el; } display() { } }
@@ -34,12 +33,12 @@ jest.mock('obsidian', () => {
       this._events = [];
       this.__settingTab = null;
     }
-    async onload() {}
-    onunload() {}
+    async onload() { }
+    onunload() { }
 
     // allow jest.spyOn(plugin, 'loadData')
     async loadData() { return {}; }
-    async saveData() {}
+    async saveData() { }
 
     addCommand(cmd) {            // collect commands so tests can .some/.find
       this.__commands.push(cmd);
@@ -53,13 +52,13 @@ jest.mock('obsidian', () => {
     constructor(app, plugin) {
       this.app = app;
       this.plugin = plugin;
-      this.containerEl = { empty() {}, createEl() { return {}; } };
+      this.containerEl = { empty() { }, createEl() { return {}; } };
     }
-    display() {}
+    display() { }
   }
 
   class Setting {
-    constructor() {}
+    constructor() { }
 
     setName() { return this; }
     setDesc() { return this; }
@@ -96,7 +95,7 @@ jest.mock('obsidian', () => {
         _onChange: null,
         setValue() { return this; },
         onChange(fn) { this._onChange = fn; return this; },
-        inputEl: { rows: 0, addClass() {} },
+        inputEl: { rows: 0, addClass() { } },
       };
       cb(control);
       Setting._textarea.push((v) => control._onChange && control._onChange(v));
@@ -112,7 +111,7 @@ jest.mock('obsidian', () => {
   }
   Setting._reset();
 
-  class Notice { constructor() {} }
+  class Notice { constructor() { } }
   class TFile { constructor() { this.extension = 'md'; this.path = ''; } }
 
   return { Plugin, PluginSettingTab, Setting, Notice, TFile };
@@ -179,8 +178,6 @@ describe('main.js integration', () => {
   });
 
   describe('Excluded folders in manual command', () => {
-    const manifest = { id: 'obsidian-toc-generator', name: 'TOC', version: '0.0.0' };
-
     it('skips when active file is in an excluded folder', async () => {
       const PluginCtor = require('../../main.js');
       const app = makeApp();
@@ -204,6 +201,25 @@ describe('main.js integration', () => {
       await registeredCommand.callback();
 
       expect(plugin.processFile).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Ignore notes with specific tags', () => {
+    it('does not process files with excluded tags', async () => {
+      app.metadataCache.getFileCache = jest.fn(() => ({
+        tags: [{ tag: '#exclude-this' }]
+      }));
+
+      plugin.settings.ignoredTags = ['exclude-this'];
+
+      app.workspace.getActiveFile = () => file;
+
+      const processSpy = jest.spyOn(plugin, 'processFile');
+
+      const cmd = plugin.__commands.find(c => c.id === 'mdnav-toc-run-on-active');
+      await cmd.callback();
+
+      expect(processSpy).not.toHaveBeenCalled();
     });
   });
 });

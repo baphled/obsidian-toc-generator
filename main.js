@@ -11,7 +11,8 @@ const DEFAULT_SETTINGS = {
   prettify_h1: true,
   debounce_ms: 250,
   hr: "---",
-  excludedFolders: []
+  excludedFolders: [],
+  ignoredTags: []
 };
 
 // Use Obsidian/Electron's Node require safely
@@ -38,8 +39,8 @@ function loadTransformFromPluginDir(app, manifestId) {
   } catch (_) { /* ignore and fall back */ }
 
   // Fallbacks to bundled module
-  try { return nodeRequire('./src/Transform.js'); } catch (_) {}
-  try { return nodeRequire('./src/Transform');   } catch (_) {}
+  try { return nodeRequire('./src/Transform.js'); } catch (_) { }
+  try { return nodeRequire('./src/Transform'); } catch (_) { }
 
   throw new Error('[MDNav] transform.js not found (dynamic or bundled)');
 }
@@ -125,6 +126,19 @@ class TOCGeneratorSettingTab extends PluginSettingTab {
         ta.inputEl.rows = 4;
         ta.inputEl.addClass('toc-excluded-folders');
       });
+
+    new Setting(containerEl)
+      .setName('Ignored tags')
+      .setDesc('One tag (without #) per entry. Files with any of these tags will be ignored.')
+      .addTextArea((ta) => {
+        ta.setValue((this.plugin.settings.ignoredTags || []).join('\n'))
+          .onChange(async (v) => {
+            this.plugin.settings.ignoredTags = v.split('\n').map(s => s.trim().replace(/^#/, '')).filter(Boolean);
+            await this.plugin.saveSettings();
+          });
+        ta.inputEl.rows = 4;
+        ta.inputEl.addClass('toc-ignored-tags');
+      });
   }
 }
 
@@ -161,6 +175,7 @@ module.exports = class TOCGenerator extends Plugin {
     this.registerEvent(this.app.vault.on('modify', (file) => {
       if (!(file instanceof TFile) || file.extension !== 'md') return;
       if (Array.isArray(this.settings.excludedFolders) && Utils.isExcludedPath(file.path, this.settings.excludedFolders)) return;
+      if (Array.isArray(this.settings.ignoredTags) && Utils.isIgnoredTags(file.tags, this.settings.ignoredTags)) return;
       debounced(file);
     }));
 
@@ -177,6 +192,11 @@ module.exports = class TOCGenerator extends Plugin {
         if (Array.isArray(this.settings.excludedFolders)
           && Utils.isExcludedPath(file.path, this.settings.excludedFolders)) {
           new Notice('MDNav: Folder excluded');
+          return;
+        }
+        if (Array.isArray(this.settings.ignoredTags)
+          && Utils.isIgnoredTags(file.tags, this.settings.ignoredTags)) {
+          new Notice('MDNav: File has an ignored tag');
           return;
         }
         await this.processFile(file);
@@ -216,7 +236,7 @@ module.exports = class TOCGenerator extends Plugin {
       hr: this.settings.hr || '---'
     };
 
-    const out = this._transform(raw, file.basename, cfg);
+    const out = this._transform(raw, file, cfg);
     if (out !== raw) {
       this.writing.add(path);
       await this.app.vault.modify(file, out);
